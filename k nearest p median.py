@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[15]:
 
 
 import pandas as pd
@@ -9,7 +9,7 @@ import numpy as np
 from pulp import *
 
 
-# ### the p-median model with k nearest facilities
+# ### (old) the p-median model with k nearest facilities
 
 # For this first stage, only k nearest facilities will be imported in the model.    
 # 1. After importing original data, I create the new table only containing k nearest facilities.   
@@ -17,7 +17,7 @@ from pulp import *
 # So in this model, the capacity constraint is still live.   
 # 3. In a broader case, it should be that, the sum of demand value of the facility can serve is no more than its capacity.
 
-# In[2]:
+# In[16]:
 
 
 # import data
@@ -37,7 +37,7 @@ students_df = pd.read_csv('data/example_subject_students.csv')
 schools_df = pd.read_csv('data/example_subject_schools.csv')
 
 
-# In[3]:
+# In[17]:
 
 
 # find the k nearest facility from distance matrix
@@ -61,13 +61,13 @@ for client_idx in range(time_table.shape[0]):
 new_distance_df = pd.DataFrame(rows, columns=['client_id', 'facility_id', 'distance'])
 
 
-# In[4]:
+# In[18]:
 
 
 new_distance_df.head(10)
 
 
-# In[5]:
+# In[19]:
 
 
 # transform the new df to the pivot table
@@ -84,13 +84,13 @@ new_time_table = (
 )
 
 
-# In[6]:
+# In[20]:
 
 
 new_time_table[:4]
 
 
-# In[7]:
+# In[21]:
 
 
 # create capacity df
@@ -101,7 +101,7 @@ new_school_df = new_school_df.merge(schools_df, left_on='facility_id',right_on='
 new_school_df.head(5)
 
 
-# In[8]:
+# In[22]:
 
 
 # set the parameter
@@ -109,7 +109,7 @@ school_indices = range(len(new_time_table[0]))
 student_indices = range(len(new_time_table))
 
 
-# In[9]:
+# In[23]:
 
 
 # p-median model considering k nearest facility
@@ -142,7 +142,7 @@ for j in school_indices:
 prob.solve(pulp.PULP_CBC_CMD(msg=False))
 
 
-# In[10]:
+# In[24]:
 
 
 for i in student_indices:
@@ -151,9 +151,9 @@ for i in student_indices:
             print(i,j)
 
 
-# ### second stage: find the infeasible K and implement the extra facility
+# ### (old) second stage: find the infeasible K and implement the extra facility
 
-# In[11]:
+# In[25]:
 
 
 # define the function to get the new distance matrix only with k nearest facilities
@@ -190,7 +190,7 @@ def get_k_facilities(k, distance_array):
     return new_distance_df, new_distance_array
 
 
-# In[12]:
+# In[26]:
 
 
 # define the function to get the capacity df
@@ -203,9 +203,9 @@ def get_capacity(new_distance_df,schools_df):
     return new_school_df
 
 
-# #### try k = 2
+# #### (old) try k = 2
 
-# In[13]:
+# In[27]:
 
 
 # try k = 2
@@ -213,7 +213,7 @@ distance_2_df, distance_2_arr = get_k_facilities(2, time_table)
 school_2_df = get_capacity(distance_2_df, schools_df)
 
 
-# In[14]:
+# In[28]:
 
 
 # p-median model
@@ -245,13 +245,13 @@ for j in school_2_indices:
 prob_2.solve(pulp.PULP_CBC_CMD(msg=False))
 
 
-# In[15]:
+# In[29]:
 
 
 distance_2_df
 
 
-# In[16]:
+# In[30]:
 
 
 for i in student_indices:
@@ -262,9 +262,9 @@ for i in student_indices:
 
 # So, k = 2 has the optimal solution. k = 1 should have the infeasible result.
 
-# #### try k = 1
+# #### (old) try k = 1
 
-# In[17]:
+# In[31]:
 
 
 distance_1_df, distance_1_arr = get_k_facilities(1, time_table)
@@ -292,7 +292,7 @@ for j in school_1_indices:
 prob_1.solve(pulp.PULP_CBC_CMD(msg=False))
 
 
-# In[18]:
+# In[32]:
 
 
 for i in student_indices:
@@ -301,32 +301,32 @@ for i in student_indices:
             print(i,j)
 
 
-# In[19]:
+# In[33]:
 
 
 school_1_index =  distance_1_df['facility_id'].sort_values().unique()
 school_1_index
 
 
-# In[20]:
+# In[34]:
 
 
 school_1_index[2]
 
 
-# In[21]:
+# In[35]:
 
 
 distance_1_df
 
 
-# In[22]:
+# In[36]:
 
 
 distance_1_arr
 
 
-# In[23]:
+# In[37]:
 
 
 print(round(prob_1.objective.value(), 3))
@@ -336,7 +336,7 @@ print(round(prob_1.objective.value(), 3))
 # 
 # Here my solution is to add one constraint, to prevent the use of 10000 in the solution.
 
-# In[24]:
+# In[38]:
 
 
 # p-median with constraint to prevent the use of 10000
@@ -366,30 +366,30 @@ for i in student_indices:
 prob_1_new.solve(pulp.PULP_CBC_CMD(msg=False))
 
 
-# #### add decision variable for placeholder/extra facility
+# #### (old) add decision variable for placeholder/extra facility 
 
 # Since k = 1 is infeasible, we use this case to implement the extra facility.
 
-# In[25]:
+# In[39]:
 
 
 # get the new distance matrix with k nearest facilities, and the rest facilities
 
 
-# In[26]:
+# In[40]:
 
 
 k_facility_number = len(distance_1_df['facility_id'].unique())
 print(k_facility_number)
 
 
-# In[27]:
+# In[41]:
 
 
 distance_1_df['facility_id']
 
 
-# In[28]:
+# In[42]:
 
 
 # Get the complement of facility_id in distance_1_df
@@ -398,26 +398,26 @@ extra_facility_ids = np.array(extra_facility_ids)
 extra_facility_ids
 
 
-# In[29]:
+# In[43]:
 
 
 len(extra_facility_ids)
 
 
-# In[30]:
+# In[44]:
 
 
 len(time_table[0])
 
 
-# In[31]:
+# In[45]:
 
 
 extra_distance_matrix = time_table[:, extra_facility_ids]
 extra_distance_matrix[0]
 
 
-# In[32]:
+# In[46]:
 
 
 # get the capacity of extra facilities
@@ -425,7 +425,7 @@ school_extra_df = pd.DataFrame({'facility_id': extra_facility_ids})
 school_extra_df = school_extra_df.merge(schools_df, left_on='facility_id',right_on='Unnamed: 0', how='left')
 
 
-# In[33]:
+# In[47]:
 
 
 # create the new distance matrix of k nearest facilities
@@ -436,19 +436,19 @@ k_distance_matrix = time_table[:, facility_ids_array]
 k_distance_matrix
 
 
-# In[34]:
+# In[48]:
 
 
 facility_ids_array
 
 
-# In[35]:
+# In[49]:
 
 
 distance_1_arr
 
 
-# In[36]:
+# In[50]:
 
 
 # p-median with all the facilities
@@ -490,7 +490,7 @@ for j in school_extra_indices:
 prob_all.solve(GLPK(msg=False))
 
 
-# In[37]:
+# In[51]:
 
 
 prob_all.status
@@ -502,7 +502,7 @@ prob_all.status
 # status = -2: The problem is unbounded; the objective function can be improved infinitely.   
 # status = -3: The solver encountered an error or was unable to solve the problem.    
 
-# In[41]:
+# In[52]:
 
 
 for (i, j) in decision_extra.keys():
@@ -522,3 +522,134 @@ for (i, j) in decision_k_in_all.keys():
 # For example, when k = 2, client `a` has facility `1` and `2` as the nearest facility, client `b` has facility `3` and `4`.   
 # 
 # It's possible that in the optimal solution client `b` is assigned to facility `1`, which is not its nearest facility.
+
+# ### (please check this part) p-median with k facilities 
+
+# #### k = 1, should have infeasible solution
+
+# In[76]:
+
+
+# to get the nearest facility of client, k = 1
+from scipy.spatial import KDTree
+k_pair = []
+for i in range(len(time_table)):
+    tree = KDTree(time_table[i].reshape(-1, 1))
+    distance, indices = tree.query(0, k=1)
+    k_pair.append([i, indices])
+
+
+# In[77]:
+
+
+k_pair
+
+
+# In[82]:
+
+
+time_table[0]
+
+
+# In[80]:
+
+
+# p-median with k facilities
+problem_k = pulp.LpProblem("new-k-nearest-facilities", LpMinimize)
+
+decision_of_k = LpVariable.dicts("x_of_k", ((i, j) for i, j in k_pair), 0, 1, LpBinary)
+
+objective_of_k = pulp.lpSum(
+    pulp.lpSum(decision_of_k.get((i,j), 0) * time_table[i,j] for j in [row[1] for row in k_pair]) 
+    for i in student_indices)
+problem_k += objective_of_k
+
+# 1. Each client is assigned to a facility
+for i in student_indices:
+    problem_k +=  pulp.lpSum(decision_of_k.get((i,j), 0) for j in [row[1] for row in k_pair]) == 1
+
+# 2. Demand value the facility can serve is no more than its capacity.
+for j in [row[1] for row in k_pair]:
+    problem_k +=  pulp.lpSum(decision_of_k.get((i,j), 0) for i in student_indices) <= schools_df['Count'][j]
+    
+problem_k.solve(pulp.PULP_CBC_CMD(msg=False))
+
+
+# In[81]:
+
+
+decision_of_k
+
+
+# So from the result, k = 1 through this model has the infeasible solution, which is the same with the previous result.   
+# 
+# Then I would try k = 2 through this model, and it should have the optimal solution.
+
+# #### k = 2, should have optimal solution
+
+# In[83]:
+
+
+# to get the nearest facility of client, k = 2
+k_pair_2 = []
+for i in range(len(time_table)):
+    tree = KDTree(time_table[i].reshape(-1, 1))
+    distance, indices = tree.query(0, k=2)
+    k_pair_2.append([i, indices])
+
+
+# In[84]:
+
+
+k_pair_2
+
+
+# In[86]:
+
+
+decision_of_k_2 = LpVariable.dicts("x_of_k_2", ((i, j) for i, sublist in k_pair_2 for j in sublist), 0, 1, LpBinary)
+
+
+# In[90]:
+
+
+unique_facility_values = set(j for sublist in [row[1] for row in k_pair_2] for j in sublist)
+unique_facility_values
+
+
+# In[87]:
+
+
+decision_of_k_2
+
+
+# In[91]:
+
+
+# p-median with k facilities
+problem_k_2 = pulp.LpProblem("new-k-nearest-facilities-2", LpMinimize)
+
+objective_of_k_2 = pulp.lpSum(
+    pulp.lpSum(decision_of_k_2.get((i,j), 0) * time_table[i,j] for j in unique_facility_values) 
+    for i in student_indices)
+problem_k_2 += objective_of_k_2
+
+# 1. Each client is assigned to a facility
+for i in student_indices:
+    problem_k_2 +=  pulp.lpSum(decision_of_k_2.get((i,j), 0) for j in unique_facility_values) == 1
+
+# 2. Demand value the facility can serve is no more than its capacity.
+for j in unique_facility_values:
+    problem_k_2 +=  pulp.lpSum(decision_of_k_2.get((i,j), 0) for i in student_indices) <= schools_df['Count'][j]
+    
+problem_k_2.solve(pulp.PULP_CBC_CMD(msg=False))
+
+
+# In[107]:
+
+
+for i in student_indices:
+    for j in unique_facility_values:
+        if (i, j) in decision_of_k_2 and decision_of_k_2[(i, j)].value() == 1:
+            print('client ' + str(i) + ' is served by facility ' + str(j))
+
