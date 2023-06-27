@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 import pandas as pd
@@ -11,7 +11,7 @@ from pulp import *
 
 # ### k-nearest p-median
 
-# In[6]:
+# In[3]:
 
 
 # import data
@@ -50,14 +50,14 @@ def k_smallest_from_distance_table(
     )  # drop the row number column from the groupby
 
 
-# In[8]:
+# In[5]:
 
 
 new_time_df = k_smallest_from_distance_table(time_df, "student", "time", "school", 5)
 new_time_df
 
 
-# In[10]:
+# In[6]:
 
 
 # get the array of new distance matrix from new dataframe
@@ -79,21 +79,21 @@ time_array[:5]
 # 
 # We need to create new indexes for client and facilities, and add the capacity information from facility dataframe.
 
-# In[14]:
+# In[7]:
 
 
 student_indices = range(new_time_df["student"].nunique())
 student_indices
 
 
-# In[15]:
+# In[8]:
 
 
 school_indices = range(new_time_df["facility"].nunique())
 school_indices
 
 
-# In[16]:
+# In[9]:
 
 
 # create new index for school/facility, according to their order, and this index is the same with
@@ -105,7 +105,7 @@ new_time_df["school_new_index"] = (
 new_time_df
 
 
-# In[17]:
+# In[10]:
 
 
 # also the new student index
@@ -115,7 +115,7 @@ new_time_df["student_new_index"] = (
 new_time_df
 
 
-# In[30]:
+# In[11]:
 
 
 # in this model, we considerate the existence of capacity, so we add it from the 'schools_df'
@@ -130,10 +130,10 @@ new_time_df
 
 # Now the data has been prepared well.
 
-# In[33]:
+# In[21]:
 
 
-def setup_from_travel_table(distance_df):
+def setup_from_travel_table(distance_df, cilent_indices, facility_indices):
     """
     Using the distance dataframe we prepared
     to write a function that sets up the k-nearest p-median problem. 
@@ -166,43 +166,95 @@ def setup_from_travel_table(distance_df):
     )
 
     objective = pulp.lpSum(
-        pulp.lpSum(decision.get((i, j), 0) * time_array[i, j] for j in school_indices)
-        for i in student_indices
+        pulp.lpSum(decision.get((i, j), 0) * time_array[i, j] for j in facility_indices)
+        for i in cilent_indices
     )
     problem += objective
 
     # 1. Each client is assigned to a facility
-    for i in student_indices:
-        problem += pulp.lpSum(decision.get((i, j), 0) for j in school_indices) == 1
+    for i in cilent_indices:
+        problem += pulp.lpSum(decision.get((i, j), 0) for j in facility_indices) == 1
 
     # 2. Demand value the facility can serve is no more than its capacity.
-    for j in school_indices:
+    for j in facility_indices:
         count = distance_df.loc[distance_df["school_new_index"] == j, "Count"].values[0]
-        problem += pulp.lpSum(decision.get((i, j), 0) for i in student_indices) <= count
+        problem += pulp.lpSum(decision.get((i, j), 0) for i in cilent_indices) <= count
 
     problem.solve(pulp.PULP_CBC_CMD(msg=False))
 
     return problem, decision
 
 
-# In[34]:
+# In[23]:
 
 
-prob, prob_decision = setup_from_travel_table(new_time_df)
+prob, prob_decision = setup_from_travel_table(new_time_df, student_indices, school_indices)
 
 
-# In[36]:
+# In[24]:
 
 
 # check if the decision variable is correct
 prob_decision
 
 
-# In[35]:
+# In[25]:
 
 
 for i in student_indices:
     for j in school_indices:
         if (i, j) in prob_decision and prob_decision[(i, j)].value() == 1:
             print("student " + str(i) + " is served by school " + str(j))
+
+
+# ### when k = 1, it should have infeasible results
+
+# In[16]:
+
+
+new_time_df_k_1 = k_smallest_from_distance_table(time_df, "student", "time", "school", 1)
+new_time_df_k_1
+
+
+# In[17]:
+
+
+school_indices_k_1 = range(new_time_df_k_1["facility"].nunique())
+school_indices_k_1
+
+
+# In[18]:
+
+
+new_time_df_k_1["school_new_index"] = (
+    new_time_df_k_1["facility"].rank(method="dense").astype(int) - 1
+)
+new_time_df_k_1["student_new_index"] = (
+    new_time_df_k_1["student"].rank(method="dense").astype(int) - 1
+)
+new_time_df_k_1
+
+
+# In[19]:
+
+
+new_time_df_k_1 = new_time_df_k_1.merge(
+    schools_df[["SE2 PP: Code", "Count"]],
+    left_on="facility",
+    right_on="SE2 PP: Code",
+    how="left",
+)
+new_time_df_k_1
+
+
+# In[26]:
+
+
+prob_k_1, decision_k_1 = setup_from_travel_table(new_time_df_k_1, student_indices, school_indices_k_1)
+
+
+# In[28]:
+
+
+prob_k_1.status
 
