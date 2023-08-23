@@ -11,4 +11,6 @@ This newly developed model is a contribution to the spopt as part of Google Summ
 4. Develop test for the new model
 5. Complete code documentation
 
-All the work above is shown in this [pull request](https://github.com/pysal/spopt/pull/387).
+All the work above is shown in these two pull requests:
+[pull request - 1](https://github.com/pysal/spopt/pull/387).
+[pull request - 2](https://github.com/pysal/spopt/pull/397).
